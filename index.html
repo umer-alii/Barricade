@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barricade.gg - Quoridor Multiplayer Game</title>
+  <meta name="description" content="Play Barricade (Quoridor style) online. Place walls and outsmart your opponent in this premium, high-fidelity browser strategy game.">
+  <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="navbar">
+    <div class="logo">
+      <span>Barricade</span>.gg
+    </div>
+    <div class="navbar-actions">
+      <button class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Toggle Light/Dark Theme">🌙</button>
+      <button class="nav-btn" id="restart-btn">Restart Game</button>
+    </div>
+  </header>
+
+  <!-- Main Playing Grid Container -->
+  <main class="main-container">
+    
+    <!-- Render target for Board -->
+    <div class="board-container">
+      <div id="board" class="board-grid" aria-label="Game Board"></div>
+    </div>
+
+    <!-- Right-hand Action Control Sidebar -->
+    <aside class="sidebar">
+      
+      <!-- Action Controls -->
+      <div class="sidebar-controls">
+        <button class="btn-primary" id="resign-btn">Resign</button>
+        <button class="btn-secondary btn-lobby" id="lobby-btn">Lobby</button>
+        <button class="btn-undo hidden" id="undo-btn">Undo</button>
+      </div>
+
+      <!-- Player 1 Status Panel -->
+      <div class="player-card p1-card" id="p1-card">
+        <h3>Player 1</h3>
+        <p>Barricades: <span id="p1-walls-text">10/10</span></p>
+      </div>
+
+      <!-- Player 2 Status Panel -->
+      <div class="player-card p2-card" id="p2-card">
+        <h3>Player 2</h3>
+        <p>Barricades: <span id="p2-walls-text">10/10</span></p>
+      </div>
+
+      <!-- Live Log of Turn/Moves Notation -->
+      <div class="history-section">
+        <div class="history-title">Move History</div>
+        <div class="history-list" id="move-history-list"></div>
+      </div>
+
+      <!-- Draggable Walls Picker -->
+      <div class="barricades-drag-section">
+        <div class="history-title">Drag &amp; Drop Barricades</div>
+        <div class="barricades-drag-container">
+          
+          <!-- Horizontal Drag Node -->
+          <div class="drag-wall-wrapper">
+            <div class="sidebar-wall wall-horizontal" draggable="true" id="drag-wall-h" aria-label="Horizontal wall block"></div>
+            <span>Horizontal</span>
+          </div>
+
+          <!-- Vertical Drag Node -->
+          <div class="drag-wall-wrapper">
+            <div class="sidebar-wall wall-vertical" draggable="true" id="drag-wall-v" aria-label="Vertical wall block"></div>
+            <span>Vertical</span>
+          </div>
+
+        </div>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <!-- Toast Notification Hub -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Lobby / Game Setup Screen Overlay -->
+  <div class="modal-overlay" id="lobby-modal" role="dialog" aria-labelledby="lobby-title">
+    <div class="modal-content lobby-content">
+      <h2 id="lobby-title">Match Setup</h2>
+      
+      <!-- Select Game Mode -->
+      <div class="lobby-form-group">
+        <label class="lobby-form-label">Game Mode</label>
+        <div class="lobby-toggle-container">
+          <button class="lobby-toggle-btn active" id="mode-local-btn">Pass &amp; Play</button>
+          <button class="lobby-toggle-btn" id="mode-ai-btn">Play vs Bot</button>
+        </div>
+      </div>
+      
+      <!-- Select Bot Difficulty -->
+      <div class="lobby-form-group hidden" id="difficulty-group">
+        <label class="lobby-form-label">Bot Difficulty</label>
+        <div class="lobby-difficulty-grid">
+          <button class="lobby-diff-btn" data-diff="easy">Easy</button>
+          <button class="lobby-diff-btn active" data-diff="medium">Medium</button>
+          <button class="lobby-diff-btn" data-diff="hard">Hard</button>
+          <button class="lobby-diff-btn" data-diff="professional">Pro</button>
+        </div>
+      </div>
+      
+      <!-- Select Play Side / Color -->
+      <div class="lobby-form-group hidden" id="color-group">
+        <label class="lobby-form-label">Play As</label>
+        <div class="lobby-color-container">
+          <button class="lobby-color-btn active" id="color-red-btn" data-side="0">
+            <span class="color-dot red-dot"></span> Red (First)
+          </button>
+          <button class="lobby-color-btn" id="color-blue-btn" data-side="1">
+            <span class="color-dot blue-dot"></span> Blue (Second)
+          </button>
+        </div>
+      </div>
+      
+      <button class="btn-secondary" id="start-match-btn">Start Match</button>
+    </div>
+  </div>
+
+  <!-- Custom Confirmation Modal -->
+  <div class="modal-overlay hidden" id="confirm-modal" role="dialog" aria-labelledby="confirm-title">
+    <div class="modal-content">
+      <div class="modal-icon confirm-icon">❓</div>
+      <h2 id="confirm-title">Are you sure?</h2>
+      <p id="confirm-message">Do you really want to proceed?</p>
+      <div class="win-modal-actions">
+        <button class="btn-lobby-exit" id="confirm-cancel-btn">Cancel</button>
+        <button class="btn-secondary" id="confirm-ok-btn">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- End of Game Overlay Modal -->
+  <div class="modal-overlay hidden" id="win-modal" role="dialog" aria-labelledby="win-message">
+    <div class="modal-content">
+      <div class="modal-icon">&#127881;</div>
+      <h2 id="win-message">Player 1 Wins!</h2>
+      <p>Congratulations on winning the match! Would you like to play again?</p>
+      <div class="win-modal-actions">
+        <button class="btn-secondary" id="win-restart-btn">Play Again</button>
+        <button class="btn-lobby-exit" id="win-lobby-btn">Lobby</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ES6 Modules Entry Hook -->
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
