@@ -1,0 +1,17 @@
+{
+  "name": "barricade",
+  "version": "1.0.0",
+  "description": "Barricade (Quoridor) - online multiplayer board game",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "dev:local": "node scripts/dev-server.js",
+    "start": "node scripts/dev-server.js"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.34.3"
+  },
+  "devDependencies": {
+    "vercel": "^39.0.0"
+  }
+}

@@ -223,13 +223,32 @@ function getRankedRootWalls(state, selfPlayerIdx, maxCands = 15) {
 
     const score = gain - 1.2 * cost;
 
-    if (gain >= 2 || (gain >= 1 && oppDist <= 4)) {
+    if (gain >= 1 && score > 0) {
       scored.push({ type: 'wall', col: w.col, row: w.row, orientation: w.orientation, score, gain });
     }
   }
 
   scored.sort((a, b) => b.score - a.score || b.gain - a.gain);
   return scored.slice(0, maxCands);
+}
+
+/**
+ * Candidate wall pool for the search tree: union of the best walls from BOTH
+ * players' perspectives, so the search models opponent blocking walls too.
+ */
+function getTreeWallPool(state, selfPlayerIdx, maxPerSide = 14) {
+  const selfWalls = getRankedRootWalls(state, selfPlayerIdx, maxPerSide);
+  const oppWalls = getRankedRootWalls(state, selfPlayerIdx === 0 ? 1 : 0, maxPerSide);
+
+  const seen = new Set();
+  const pool = [];
+  for (const w of [...selfWalls, ...oppWalls]) {
+    const key = `${w.orientation},${w.col},${w.row}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    pool.push({ type: 'wall', col: w.col, row: w.row, orientation: w.orientation });
+  }
+  return pool;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -253,7 +272,7 @@ function disjointRouteCount(pos, goalRow, hWalls, vWalls) {
   const usedEdges = new Set();
   let pathCount = 0;
 
-  for (let iter = 0; iter < 5; iter++) {
+  for (let iter = 0; iter < 3; iter++) {
     const queue = [{ col: pos.col, row: pos.row, parent: null }];
     const visited = new Set();
     visited.add(`${pos.col},${pos.row}`);
@@ -573,10 +592,11 @@ export function getBestMove(gameState) {
     return chooseMoveMedium(state, selfPlayerIdx);
   }
 
-  // 3. Exact Solver (Option B) for perfect endgames
+  // 3. Exact Solver (Option B) for perfect endgames — Expert exclusive.
+  // Hard uses its regular search in endgames, keeping a real skill gap.
   const p0Walls = state.p0Walls;
   const p1Walls = state.p1Walls;
-  if (p0Walls === 0 && p1Walls === 0) {
+  if (p0Walls === 0 && p1Walls === 0 && diff !== 'hard') {
     return exactSolve(state, selfPlayerIdx);
   }
 
@@ -600,7 +620,10 @@ export function getBestMove(gameState) {
   
   const oppWinningMoves = oppMoves.filter(om => om.row === oppGoalLoc);
   
-  let rootWallCandidates = getRankedRootWalls(state, selfPlayerIdx, 15);
+  const rootWallCandidates = getRankedRootWalls(state, selfPlayerIdx, 16)
+    .map(w => ({ type: 'wall', col: w.col, row: w.row, orientation: w.orientation }));
+  // Wall pool used inside the tree includes the opponent's best blocking walls
+  const treeWallPool = getTreeWallPool(state, selfPlayerIdx, 14);
   let initialRootMoves = [...pawnMoves];
   if (selfPlayerIdx === 0 ? state.p0Walls > 0 : state.p1Walls > 0) {
     initialRootMoves.push(...rootWallCandidates);
@@ -630,8 +653,8 @@ export function getBestMove(gameState) {
   }
 
   // Minimax configurations
-  const maxDepth = diff === 'hard' ? 6 : 14;
-  const timeLimitMs = diff === 'hard' ? 1200 : 1500;
+  const maxDepth = diff === 'hard' ? 8 : 14;
+  const timeLimitMs = diff === 'hard' ? 1500 : 2800;
   const startTime = Date.now();
 
   const transpositionTable = new Map();
@@ -659,7 +682,7 @@ export function getBestMove(gameState) {
     const selfGoal = GOAL_ROWS[simState.currentPlayer];
 
     const selfPLoc = simState.currentPlayer === 0 ? { col: simState.p0Col, row: simState.p0Row } : { col: simState.p1Col, row: simState.p1Row };
-    const oppPLoc = simState.currentPlayer === 0 ? { col: simState.p1Col, row: simState.p1Row } : { col: state.p0Col, row: state.p0Row };
+    const oppPLoc = simState.currentPlayer === 0 ? { col: simState.p1Col, row: simState.p1Row } : { col: simState.p0Col, row: simState.p0Row };
     const oldOppPath = getShortestPath(oppPLoc, oppGoal, simState.hWalls, simState.vWalls);
 
     const scored = moves.map(m => {
@@ -726,7 +749,7 @@ export function getBestMove(gameState) {
     ];
 
     const wallMoves = [];
-    for (const w of rootWallCandidates) {
+    for (const w of treeWallPool) {
       if (validateWallFast(w.col, w.row, w.orientation, players, simState.hWalls, simState.vWalls)) {
         wallMoves.push(w);
       }
@@ -829,10 +852,18 @@ export function getBestMove(gameState) {
     return value;
   }
 
-  // Iterative Deepening
+  // Shuffle before the first ordering pass: JS sort is stable, so genuinely
+  // tied moves keep this random relative order — giving opening variety
+  // between games without ever picking an inferior move.
+  for (let i = finalRootMoves.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [finalRootMoves[i], finalRootMoves[j]] = [finalRootMoves[j], finalRootMoves[i]];
+  }
+
+  // Iterative Deepening with root alpha-beta and timeout-safe iterations
   let bestMove = null;
   let bestScore = -Infinity;
-  let rootMoves = finalRootMoves;
+  let rootMoves = orderMoves(finalRootMoves, state, 1);
   let prevDepthTime = 0;
 
   for (let d = 1; d <= maxDepth; d++) {
@@ -844,25 +875,48 @@ export function getBestMove(gameState) {
 
     let currentBestMove = null;
     let currentBestScore = -Infinity;
-
-    rootMoves = orderMoves(rootMoves, state, d);
+    let rootAlpha = -Infinity;
+    let timedOut = false;
+    const iterationScores = [];
 
     for (const bm of rootMoves) {
-      if (Date.now() - startTime > timeLimitMs) break;
+      if (Date.now() - startTime > timeLimitMs) {
+        timedOut = true;
+        break;
+      }
 
       const nextState = applyMove(state, bm);
-      const score = -negamax(nextState, d - 1, -Infinity, Infinity, false, false) + oscPenalty(bm, recent);
+      // Narrow window using best-so-far; osc penalty only lowers scores, so
+      // using the penalized value for alpha stays safe (never over-prunes wrongly)
+      const raw = -negamax(nextState, d - 1, -Infinity, -rootAlpha, false, false);
+      const score = raw + oscPenalty(bm, recent);
+      iterationScores.push({ move: bm, score });
 
       if (score > currentBestScore) {
         currentBestScore = score;
         currentBestMove = bm;
       }
+      rootAlpha = Math.max(rootAlpha, score);
     }
 
-    if (currentBestMove) {
+    // Only trust fully-completed iterations; a partial pass may have skipped
+    // the strongest move entirely
+    if (!timedOut && currentBestMove) {
       bestMove = currentBestMove;
       bestScore = currentBestScore;
+      // Re-order root moves by this depth's scores for the next iteration
+      iterationScores.sort((a, b) => b.score - a.score);
+      rootMoves = iterationScores.map(s => s.move);
+    } else if (timedOut) {
+      if (!bestMove && currentBestMove) {
+        bestMove = currentBestMove;
+        bestScore = currentBestScore;
+      }
+      break;
     }
+
+    // Stop early if a forced win was found
+    if (bestScore > 150000) break;
 
     prevDepthTime = Date.now() - depthStart;
   }

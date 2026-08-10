@@ -29,6 +29,9 @@ export class MoveHistory {
     // Nothing new to append
     if (historyList.length === this.renderedCount) return;
 
+    // Clear the previous "latest move" marker before appending new rows
+    this.container.querySelectorAll('.active-move').forEach(el => el.classList.remove('active-move'));
+
     // Remove the last row if it was a partial row (only P1 move, no P2 yet),
     // so we can re-render it fully when P2's move comes in
     const lastRenderedTurn = Math.ceil(this.renderedCount / 2);

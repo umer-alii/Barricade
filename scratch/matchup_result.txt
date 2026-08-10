@@ -1,0 +1,6 @@
+Game 1: professional wins in 77 plies (goal, 63.3s, professional as P0)
+Game 2: hard wins in 97 plies (goal, 87.9s, professional as P1)
+Game 3: professional wins in 73 plies (goal, 71.6s, professional as P0)
+Game 4: hard wins in 97 plies (goal, 91.5s, professional as P1)
+
+Result: professional 2 — 2 hard

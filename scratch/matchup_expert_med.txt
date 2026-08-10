@@ -1,0 +1,4 @@
+Game 1: professional wins in 15 plies (goal, 11.4s, professional as P0)
+Game 2: professional wins in 14 plies (goal, 9.6s, professional as P1)
+
+Result: professional 2 — 0 medium

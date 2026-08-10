@@ -18,9 +18,21 @@ export class GameState {
     this.winner = null;        // null, 0, or 1
     
     // Match Mode Settings
-    this.gameMode = 'local';       // 'local' or 'ai'
-    this.botDifficulty = 'medium';  // 'easy', 'medium', 'hard', 'professional'
-    this.humanPlayerIndex = 0;     // 0 (Red) or 1 (Blue)
+    this.gameMode = 'local';       // 'local', 'ai', or 'online'
+    this.botDifficulty = 'medium';  // 'easy', 'medium', 'hard', 'expert'
+    this.humanPlayerIndex = 0;     // 0 (Red) or 1 (Blue) — also local seat in online mode
+    this.roomCode = null;          // Online room code
+    this.activePuzzle = null;      // Current daily puzzle metadata
+
+    // Online clock state (synced from server)
+    this.timeControl = null;
+    this.timeControlLabel = null;
+    this.isUnlimited = true;
+    this.incrementMs = 0;
+    this.clocks = null;
+    this.lastMoveAt = null;
+    this.endReason = null;   // 'resign' | 'timeout' | null (goal)
+    this.resignedBy = null;  // player index when endReason === 'resign'
   }
 
   /**
@@ -36,6 +48,8 @@ export class GameState {
     this.verticalWalls = [];
     this.history = [];
     this.winner = null;
+    this.endReason = null;
+    this.resignedBy = null;
     // gameMode, botDifficulty, and humanPlayerIndex are preserved across resets
   }
 
@@ -89,8 +103,52 @@ export class GameState {
       winner: this.winner,
       gameMode: this.gameMode,
       botDifficulty: this.botDifficulty,
-      humanPlayerIndex: this.humanPlayerIndex
+      humanPlayerIndex: this.humanPlayerIndex,
+      roomCode: this.roomCode,
+      activePuzzleId: this.activePuzzle?.id ?? null,
+      timeControl: this.timeControl,
+      timeControlLabel: this.timeControlLabel,
+      isUnlimited: this.isUnlimited,
+      incrementMs: this.incrementMs,
+      clocks: this.clocks,
+      lastMoveAt: this.lastMoveAt,
+      endReason: this.endReason,
+      resignedBy: this.resignedBy
     };
+  }
+
+  /**
+   * Apply authoritative server state without overwriting local client settings.
+   * Used for online multiplayer sync.
+   * @param {Object} data - Serialized game state from server
+   */
+  applyServerState(data) {
+    if (!data) return;
+    this.currentPlayer = data.currentPlayer;
+
+    if (Array.isArray(data.players)) {
+      data.players.forEach((pData, idx) => {
+        if (this.players[idx]) {
+          this.players[idx].col = pData.col;
+          this.players[idx].row = pData.row;
+          this.players[idx].walls = pData.walls;
+        }
+      });
+    }
+
+    this.horizontalWalls = data.horizontalWalls || [];
+    this.verticalWalls = data.verticalWalls || [];
+    this.history = data.history || [];
+    this.winner = data.winner !== undefined ? data.winner : null;
+
+    if (data.timeControl !== undefined) this.timeControl = data.timeControl;
+    if (data.timeControlLabel !== undefined) this.timeControlLabel = data.timeControlLabel;
+    if (data.isUnlimited !== undefined) this.isUnlimited = data.isUnlimited;
+    if (data.incrementMs !== undefined) this.incrementMs = data.incrementMs;
+    if (data.clocks !== undefined) this.clocks = data.clocks;
+    if (data.lastMoveAt !== undefined) this.lastMoveAt = data.lastMoveAt;
+    if (data.endReason !== undefined) this.endReason = data.endReason;
+    if (data.resignedBy !== undefined) this.resignedBy = data.resignedBy;
   }
 
   /**
@@ -119,5 +177,16 @@ export class GameState {
     this.gameMode = data.gameMode || 'local';
     this.botDifficulty = data.botDifficulty || 'medium';
     this.humanPlayerIndex = data.humanPlayerIndex !== undefined ? data.humanPlayerIndex : 0;
+    this.roomCode = data.roomCode || null;
+    this.activePuzzle = null;
+
+    if (data.timeControl !== undefined) this.timeControl = data.timeControl;
+    if (data.timeControlLabel !== undefined) this.timeControlLabel = data.timeControlLabel;
+    if (data.isUnlimited !== undefined) this.isUnlimited = data.isUnlimited;
+    if (data.incrementMs !== undefined) this.incrementMs = data.incrementMs;
+    if (data.clocks !== undefined) this.clocks = data.clocks;
+    if (data.lastMoveAt !== undefined) this.lastMoveAt = data.lastMoveAt;
+    if (data.endReason !== undefined) this.endReason = data.endReason;
+    if (data.resignedBy !== undefined) this.resignedBy = data.resignedBy;
   }
 }

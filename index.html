@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Barricade.gg - Quoridor Multiplayer Game</title>
-  <meta name="description" content="Play Barricade (Quoridor style) online. Place walls and outsmart your opponent in this premium, high-fidelity browser strategy game.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧱</text></svg>">
+  <meta name="description"
+    content="Play Barricade (Quoridor style) online. Place walls and outsmart your opponent in this premium, high-fidelity browser strategy game.">
   <link rel="stylesheet" href="styles/style.css">
 </head>
+
 <body>
 
   <!-- Top Navigation Header -->
@@ -15,14 +19,18 @@
       <span>Barricade</span>.gg
     </div>
     <div class="navbar-actions">
+      <div class="room-code-badge hidden" id="room-code-badge" title="Share this code with your friend">
+        Room: <span id="room-code-text"></span>
+        <span class="room-time-badge hidden" id="room-time-badge"></span>
+      </div>
       <button class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Toggle Light/Dark Theme">🌙</button>
       <button class="nav-btn" id="restart-btn">Restart Game</button>
     </div>
   </header>
 
-  <!-- Main Playing Grid Container -->
-  <main class="main-container">
-    
+  <!-- Main Playing Grid Container (hidden by default, shown when a game starts) -->
+  <main class="main-container hidden">
+
     <!-- Render target for Board -->
     <div class="board-container">
       <div id="board" class="board-grid" aria-label="Game Board"></div>
@@ -30,23 +38,47 @@
 
     <!-- Right-hand Action Control Sidebar -->
     <aside class="sidebar">
-      
+
       <!-- Action Controls -->
       <div class="sidebar-controls">
         <button class="btn-primary" id="resign-btn">Resign</button>
-        <button class="btn-secondary btn-lobby" id="lobby-btn">Lobby</button>
-        <button class="btn-undo hidden" id="undo-btn">Undo</button>
+        <button class="btn-undo hidden" id="undo-btn">↩️ Undo</button>
+      </div>
+
+      <div class="puzzle-sidebar-panel hidden" id="puzzle-sidebar-panel">
+        <div class="puzzle-panel-top">
+          <h2 class="puzzle-sidebar-heading">Daily Puzzle</h2>
+          <span class="puzzle-sidebar-date" id="puzzle-screen-date">Aug 6, 2026</span>
+        </div>
+        <div class="puzzle-badge-row">
+          <span class="puzzle-type-badge" id="puzzle-type-badge" data-type="win">Win in 1</span>
+          <div class="puzzle-progress-dots" id="puzzle-progress-dots"></div>
+        </div>
+        <p class="puzzle-sidebar-prompt" id="puzzle-screen-prompt">Red to move. Find the best move.</p>
+        <div class="puzzle-meta-row">
+          <span class="puzzle-sidebar-meta" id="puzzle-screen-meta">Puzzle 1 of 3</span>
+          <span class="puzzle-sidebar-attempts" id="puzzle-attempts">Attempts: 0</span>
+        </div>
+        <div class="puzzle-feedback hidden" id="puzzle-feedback"></div>
+        <div class="puzzle-sidebar-actions">
+          <button class="btn-secondary hidden" id="puzzle-solution-btn">Show Solution</button>
+          <button class="btn-primary hidden" id="puzzle-next-btn">Next Puzzle →</button>
+          <button class="btn-primary hidden" id="puzzle-retry-btn">Try Again</button>
+          <button class="btn-lobby-exit" id="puzzle-back-btn">← Back to Lobby</button>
+        </div>
       </div>
 
       <!-- Player 1 Status Panel -->
       <div class="player-card p1-card" id="p1-card">
         <h3>Player 1</h3>
+        <p class="player-clock hidden" id="p1-clock">--:--</p>
         <p>Barricades: <span id="p1-walls-text">10/10</span></p>
       </div>
 
       <!-- Player 2 Status Panel -->
       <div class="player-card p2-card" id="p2-card">
         <h3>Player 2</h3>
+        <p class="player-clock hidden" id="p2-clock">--:--</p>
         <p>Barricades: <span id="p2-walls-text">10/10</span></p>
       </div>
 
@@ -60,16 +92,18 @@
       <div class="barricades-drag-section">
         <div class="history-title">Drag &amp; Drop Barricades</div>
         <div class="barricades-drag-container">
-          
+
           <!-- Horizontal Drag Node -->
           <div class="drag-wall-wrapper">
-            <div class="sidebar-wall wall-horizontal" draggable="true" id="drag-wall-h" aria-label="Horizontal wall block"></div>
+            <div class="sidebar-wall wall-horizontal" draggable="true" id="drag-wall-h"
+              aria-label="Horizontal wall block"></div>
             <span>Horizontal</span>
           </div>
 
           <!-- Vertical Drag Node -->
           <div class="drag-wall-wrapper">
-            <div class="sidebar-wall wall-vertical" draggable="true" id="drag-wall-v" aria-label="Vertical wall block"></div>
+            <div class="sidebar-wall wall-vertical" draggable="true" id="drag-wall-v" aria-label="Vertical wall block">
+            </div>
             <span>Vertical</span>
           </div>
 
@@ -83,47 +117,244 @@
   <!-- Toast Notification Hub -->
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
-  <!-- Lobby / Game Setup Screen Overlay -->
-  <div class="modal-overlay" id="lobby-modal" role="dialog" aria-labelledby="lobby-title">
-    <div class="modal-content lobby-content">
-      <h2 id="lobby-title">Match Setup</h2>
-      
-      <!-- Select Game Mode -->
-      <div class="lobby-form-group">
-        <label class="lobby-form-label">Game Mode</label>
-        <div class="lobby-toggle-container">
-          <button class="lobby-toggle-btn active" id="mode-local-btn">Pass &amp; Play</button>
-          <button class="lobby-toggle-btn" id="mode-ai-btn">Play vs Bot</button>
+  <!-- Dedicated Premium Full-Screen Lobby Dashboard -->
+  <div class="lobby-screen" id="lobby-screen">
+    <div class="lobby-container">
+
+      <!-- Left Column: Profile Card & Top Leaderboard -->
+      <div class="lobby-panel profile-panel">
+        <div class="lobby-card profile-card">
+          <div class="profile-header">
+            <div class="profile-avatar" id="profile-avatar-display">G</div>
+            <div class="profile-info">
+              <div class="profile-name-row">
+                <span class="profile-name" id="profile-name-display">Guest-76707</span>
+                <button class="btn-edit-name" id="btn-edit-name" title="Change Nickname">✏️</button>
+              </div>
+              <div class="profile-rating" id="profile-rating-display">Rating: — (guest)</div>
+              <span class="profile-player-id hidden" id="my-player-id" title="Click to copy your player ID">ID: ------</span>
+            </div>
+          </div>
+
+          <div class="account-actions">
+            <button class="btn-account" id="btn-account-signin">Sign In / Register</button>
+            <button class="btn-account btn-account-secondary hidden" id="btn-account-signout">Sign Out</button>
+          </div>
+
+          <div class="profile-stats">
+            <div class="stat-box">
+              <span class="stat-value" id="stats-wins">0</span>
+              <span class="stat-label">Wins</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-value" id="stats-losses">0</span>
+              <span class="stat-label">Losses</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-value" id="stats-ratio">0%</span>
+              <span class="stat-label">Win Rate</span>
+            </div>
+          </div>
+
+          <!-- Inline Edit Username Form -->
+          <div class="name-edit-container hidden" id="name-edit-container">
+            <input type="text" class="name-edit-input" id="name-edit-input" placeholder="Enter nickname" maxlength="16"
+              autocomplete="off">
+            <div class="name-edit-actions">
+              <button class="btn-mini btn-cancel" id="btn-name-cancel">Cancel</button>
+              <button class="btn-mini btn-save" id="btn-name-save">Save</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="lobby-card leaderboard-card">
+          <h3 class="card-title">🏆 Top Players</h3>
+          <!-- Live leaderboard: populated from Supabase profiles (Elo desc) -->
+          <div class="leaderboard-list" id="leaderboard-list">
+            <p class="leaderboard-empty" id="leaderboard-empty">Leaderboard unavailable — accounts not configured.</p>
+          </div>
+          <div class="leaderboard-pager hidden" id="leaderboard-pager">
+            <button class="btn-mini" id="leaderboard-prev">‹ Prev</button>
+            <span class="leaderboard-page-label" id="leaderboard-page-label">1</span>
+            <button class="btn-mini" id="leaderboard-next">Next ›</button>
+          </div>
+        </div>
+
+        <div class="lobby-card friends-card hidden" id="friends-card">
+          <h3 class="card-title">👥 Friends</h3>
+          <div class="friend-add-row">
+            <input type="text" class="friend-add-input" id="friend-add-input" placeholder="Add by player ID (AB12CD)"
+              maxlength="6" autocomplete="off" spellcheck="false">
+            <button class="btn-mini btn-save" id="friend-add-btn">Add</button>
+          </div>
+          <div class="friend-requests-section hidden" id="friend-requests-section">
+            <span class="friends-section-label">Requests</span>
+            <div class="friend-requests-list" id="friend-requests-list"></div>
+          </div>
+          <div class="friends-list" id="friends-list"></div>
         </div>
       </div>
-      
-      <!-- Select Bot Difficulty -->
-      <div class="lobby-form-group hidden" id="difficulty-group">
-        <label class="lobby-form-label">Bot Difficulty</label>
-        <div class="lobby-difficulty-grid">
-          <button class="lobby-diff-btn" data-diff="easy">Easy</button>
-          <button class="lobby-diff-btn active" data-diff="medium">Medium</button>
-          <button class="lobby-diff-btn" data-diff="hard">Hard</button>
-          <button class="lobby-diff-btn" data-diff="professional">Pro</button>
+
+      <!-- Center Column: Live Matchmaking Hub & Daily Quoridor Puzzles -->
+      <div class="lobby-panel main-lobby-panel">
+        <div class="lobby-card live-lobby-card">
+          <div class="card-header-row">
+            <h3 class="card-title">Live Lobby</h3>
+            <div class="lobby-status-indicator">
+              <span class="status-pulse connected" id="network-status-pulse"></span>
+              <span class="status-label" id="network-status-text">Connected</span>
+            </div>
+          </div>
+
+          <div class="lobby-open-rooms-header">
+            <span class="open-rooms-title">OPEN ROOMS (<span id="open-rooms-count">0</span>)</span>
+            <button class="btn-refresh" id="btn-refresh-rooms" title="Scan for Open Rooms">🔄</button>
+          </div>
+
+          <div class="open-rooms-table-container">
+            <table class="open-rooms-table">
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Rating</th>
+                  <th>Time</th>
+                  <th>Mode</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="open-rooms-list">
+                <tr>
+                  <td colspan="5" class="table-empty">No active open rooms. Create one to get started!</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="join-code-row">
+            <input type="text" class="join-code-input-lobby" id="lobby-join-code-input" placeholder="Enter room code"
+              maxlength="6" autocomplete="off" spellcheck="false">
+            <button class="btn-primary-lobby" id="lobby-join-btn">Join</button>
+          </div>
+        </div>
+
+        <div class="lobby-card puzzles-card">
+          <h3 class="card-title">🧩 Daily Barricade Puzzle</h3>
+          <p class="puzzle-card-date" id="lobby-puzzle-date">Jul 10, 2026</p>
+          <p class="puzzle-card-desc">A new set of puzzles every day. Find the best move!</p>
+          <div class="puzzle-card-progress">
+            <span id="lobby-puzzle-progress">0/3 completed</span>
+          </div>
+          <button class="btn-primary-lobby btn-daily-puzzle" id="btn-daily-puzzle">Play Today's Puzzles</button>
         </div>
       </div>
-      
-      <!-- Select Play Side / Color -->
-      <div class="lobby-form-group hidden" id="color-group">
-        <label class="lobby-form-label">Play As</label>
-        <div class="lobby-color-container">
-          <button class="lobby-color-btn active" id="color-red-btn" data-side="0">
-            <span class="color-dot red-dot"></span> Red (First)
-          </button>
-          <button class="lobby-color-btn" id="color-blue-btn" data-side="1">
-            <span class="color-dot blue-dot"></span> Blue (Second)
-          </button>
+
+      <!-- Right Column: Quick Launch Actions & Custom Game Builder -->
+      <div class="lobby-panel controls-panel">
+        <div class="lobby-card quick-play-card">
+          <h3 class="card-title">⚡ Quick Play</h3>
+          <div class="quick-play-actions">
+            <button class="btn-quick-play vs-computer-btn" id="quick-vs-bot-btn">
+              <span class="btn-icon">💻</span>
+              <div class="btn-text-wrapper">
+                <span class="btn-title">vs Computer</span>
+                <span class="btn-desc">Play vs smart AI Bot</span>
+              </div>
+            </button>
+            <button class="btn-quick-play local-game-btn" id="quick-local-btn">
+              <span class="btn-icon">👥</span>
+              <div class="btn-text-wrapper">
+                <span class="btn-title">Local Game</span>
+                <span class="btn-desc">Pass &amp; play locally</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="lobby-card create-room-card" id="create-room-card">
+          <h3 class="card-title">🛠️ Create Custom Game</h3>
+          <div class="create-match-form">
+            <div class="form-group">
+              <label class="form-label">Game Mode</label>
+              <div class="lobby-toggle-container">
+                <button class="lobby-toggle-btn active" id="lobby-mode-casual">Casual</button>
+                <button class="lobby-toggle-btn" id="lobby-mode-ranked">Ranked</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Time Control</label>
+              <select class="lobby-select" id="lobby-time-control">
+                <option value="5+3 (Blitz)">5+3 (Blitz)</option>
+                <option value="10 (Rapid)">10 (Rapid)</option>
+                <option value="15+10 (Rapid)" selected>15+10 (Rapid)</option>
+                <option value="30 (Classical)">30 (Classical)</option>
+                <option value="Unlimited">Unlimited</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Play As</label>
+              <select class="lobby-select" id="lobby-play-as">
+                <option value="random" selected>Random Side</option>
+                <option value="red">Red (First)</option>
+                <option value="blue">Blue (Second)</option>
+              </select>
+            </div>
+
+            <div class="form-group private-room-row">
+              <label class="form-label-checkbox">
+                <input type="checkbox" id="lobby-private-room">
+                <span>Private Room (code only)</span>
+              </label>
+            </div>
+
+            <button class="btn-create-room-submit" id="lobby-create-room-btn">+ Create Custom Room</button>
+          </div>
+        </div>
+
+        <div class="lobby-card your-room-card hidden" id="your-room-card">
+          <h3 class="card-title">YOUR ROOM <span class="badge-private" id="your-room-privacy-badge">[🔒 Private]</span>
+          </h3>
+          <div class="your-room-details">
+            <div class="room-code-section">
+              <label class="form-label">Room Code</label>
+              <div class="room-code-box" id="your-room-code">------</div>
+            </div>
+
+            <div class="invite-link-section">
+              <label class="form-label">Invite Link</label>
+              <div class="invite-link-row">
+                <input type="text" class="invite-link-input" id="your-room-invite-input" readonly
+                  value="https://barricade.gg/?room=">
+                <button class="btn-copy-invite" id="btn-copy-invite">Copy</button>
+              </div>
+            </div>
+
+            <div class="room-info-grid">
+              <div class="info-row">
+                <span class="info-label">Status</span>
+                <span class="info-value status-waiting" id="your-room-status">Waiting for opponent...</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Time Control</span>
+                <span class="info-value" id="your-room-time-control">15+10</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Playing as</span>
+                <span class="info-value" id="your-room-play-as">Random</span>
+              </div>
+            </div>
+
+            <button class="btn-leave-room" id="btn-leave-room">Leave Room</button>
+          </div>
+          <p class="share-hint">Share the room code or invite link with a friend to play!</p>
         </div>
       </div>
-      
-      <button class="btn-secondary" id="start-match-btn">Start Match</button>
+
     </div>
   </div>
+
+
 
   <!-- Custom Confirmation Modal -->
   <div class="modal-overlay hidden" id="confirm-modal" role="dialog" aria-labelledby="confirm-title">
@@ -138,20 +369,133 @@
     </div>
   </div>
 
-  <!-- End of Game Overlay Modal -->
-  <div class="modal-overlay hidden" id="win-modal" role="dialog" aria-labelledby="win-message">
-    <div class="modal-content">
-      <div class="modal-icon">&#127881;</div>
-      <h2 id="win-message">Player 1 Wins!</h2>
-      <p>Congratulations on winning the match! Would you like to play again?</p>
-      <div class="win-modal-actions">
-        <button class="btn-secondary" id="win-restart-btn">Play Again</button>
-        <button class="btn-lobby-exit" id="win-lobby-btn">Lobby</button>
+  <!-- Play vs Computer Setup Modal -->
+  <div class="modal-overlay hidden" id="vs-computer-modal" role="dialog" aria-labelledby="vs-computer-title">
+    <div class="modal-content vs-computer-modal-content">
+      <h2 id="vs-computer-title">Play vs Computer</h2>
+      <p class="modal-subtitle">Choose starting player and difficulty</p>
+
+      <div class="modal-section">
+        <label class="modal-section-title">Starting player</label>
+        <div class="modal-player-options">
+          <button class="modal-option-btn active" id="vs-computer-p1" data-side="red">
+            Player 1 <span class="dot red-dot">🔴</span>
+          </button>
+          <button class="modal-option-btn" id="vs-computer-p2" data-side="blue">
+            Player 2 <span class="dot blue-dot">🔵</span>
+          </button>
+        </div>
       </div>
+
+      <div class="modal-section">
+        <label class="modal-section-title">Difficulty</label>
+        <div class="modal-difficulty-options">
+          <button class="modal-option-btn" data-diff="easy">Easy</button>
+          <button class="modal-option-btn active" data-diff="medium">Medium</button>
+          <button class="modal-option-btn" data-diff="hard">Hard</button>
+          <button class="modal-option-btn" data-diff="expert">Expert</button>
+        </div>
+      </div>
+
+      <div class="win-modal-actions vs-computer-actions">
+        <button class="btn-lobby-exit" id="vs-computer-cancel-btn">Cancel</button>
+        <button class="btn-secondary" id="vs-computer-start-btn">Start Game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- End of Game Overlay Modal (Game Over) -->
+  <div class="modal-overlay hidden" id="win-modal" role="dialog" aria-labelledby="win-message">
+    <div class="modal-content game-over-modal-content">
+      <h2 id="win-message">Game Over</h2>
+      <p class="modal-subtitle" id="win-subtitle">Rematch?</p>
+      <p id="rematch-status-text" class="rematch-status-text hidden"></p>
+
+      <div class="win-modal-actions game-over-actions">
+        <button class="btn-rematch-main" id="win-restart-btn">Rematch</button>
+        <button class="btn-lobby-exit" id="win-lobby-btn">Back to Lobby</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Modal (sign in / register / reset / first-login username picker) -->
+  <div class="modal-overlay hidden" id="auth-modal" role="dialog" aria-labelledby="auth-modal-title">
+    <div class="modal-content auth-modal-content">
+      <button class="auth-close" id="auth-close-btn" title="Close">✕</button>
+      <h2 id="auth-modal-title">Barricade Account</h2>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-target="signin">Sign In</button>
+        <button class="auth-tab" data-target="register">Register</button>
+      </div>
+
+      <div class="auth-error hidden" id="auth-error"></div>
+
+      <!-- Sign In -->
+      <div class="auth-view" data-auth-view="signin">
+        <input type="email" class="auth-input" id="auth-signin-email" placeholder="Email" autocomplete="email">
+        <input type="password" class="auth-input" id="auth-signin-password" placeholder="Password"
+          autocomplete="current-password">
+        <button class="btn-secondary auth-submit" id="auth-signin-btn">Sign In</button>
+        <a href="#" class="auth-link" data-auth-goto="reset">Forgot password?</a>
+        <div class="auth-divider"><span>or continue with</span></div>
+        <div class="auth-social-row">
+          <button class="btn-social" data-oauth="google">Google</button>
+          <button class="btn-social" data-oauth="discord">Discord</button>
+        </div>
+      </div>
+
+      <!-- Register -->
+      <div class="auth-view hidden" data-auth-view="register">
+        <input type="email" class="auth-input" id="auth-register-email" placeholder="Email" autocomplete="email">
+        <input type="password" class="auth-input" id="auth-register-password" placeholder="Password (min 8 chars)"
+          autocomplete="new-password">
+        <button class="btn-secondary auth-submit" id="auth-register-btn">Create Account</button>
+        <p class="auth-hint">You'll receive a verification email before you can sign in.</p>
+        <div class="auth-divider"><span>or continue with</span></div>
+        <div class="auth-social-row">
+          <button class="btn-social" data-oauth="google">Google</button>
+          <button class="btn-social" data-oauth="discord">Discord</button>
+        </div>
+      </div>
+
+      <!-- Password Reset -->
+      <div class="auth-view hidden" data-auth-view="reset">
+        <p class="auth-hint">Enter your email and we'll send you a reset link.</p>
+        <input type="email" class="auth-input" id="auth-reset-email" placeholder="Email" autocomplete="email">
+        <button class="btn-secondary auth-submit" id="auth-reset-btn">Send Reset Email</button>
+        <a href="#" class="auth-link" data-auth-goto="signin">← Back to sign in</a>
+      </div>
+
+      <!-- First-login username picker -->
+      <div class="auth-view hidden" data-auth-view="username">
+        <p class="auth-hint">Choose your unique username. Your short player ID (for adding friends) is generated
+          automatically.</p>
+        <input type="text" class="auth-input" id="auth-username-input" placeholder="Username (2-16 chars)"
+          maxlength="16" autocomplete="off">
+        <button class="btn-secondary auth-submit" id="auth-username-btn">Claim Username</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat drawer + floating toggle -->
+  <button class="chat-fab hidden" id="chat-fab" title="Chat">
+    💬<span class="chat-fab-badge hidden" id="chat-fab-badge">0</span>
+  </button>
+  <div class="chat-drawer hidden" id="chat-drawer">
+    <div class="chat-header">
+      <span class="chat-title" id="chat-title">💬 Chat</span>
+      <button class="chat-close" id="chat-close-btn" title="Close">✕</button>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input-row">
+      <input type="text" class="chat-input" id="chat-input" placeholder="Type a message…" autocomplete="off">
+      <button class="chat-send" id="chat-send-btn">Send</button>
     </div>
   </div>
 
   <!-- ES6 Modules Entry Hook -->
   <script type="module" src="src/main.js"></script>
 </body>
+
 </html>

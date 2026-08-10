@@ -19,6 +19,8 @@ export class Sidebar {
     // Remaining wall texts
     this.p1WallsText = document.getElementById('p1-walls-text');
     this.p2WallsText = document.getElementById('p2-walls-text');
+    this.p1Clock = document.getElementById('p1-clock');
+    this.p2Clock = document.getElementById('p2-clock');
     
     // Buttons
     this.restartBtn = document.getElementById('restart-btn');
@@ -77,10 +79,25 @@ export class Sidebar {
    * @param {number} p1Walls - Player 1 remaining walls
    * @param {number} p2Walls - Player 2 remaining walls
    */
-  update(currentPlayer, p1Walls, p2Walls) {
+  update(currentPlayer, p1Walls, p2Walls, clocks = null) {
     // Update wall count labels
     if (this.p1WallsText) this.p1WallsText.textContent = `${p1Walls}/10`;
     if (this.p2WallsText) this.p2WallsText.textContent = `${p2Walls}/10`;
+
+    if (clocks) {
+      const [p1Clock, p2Clock] = clocks;
+      if (this.p1Clock) {
+        this.p1Clock.textContent = p1Clock;
+        this.p1Clock.classList.remove('hidden');
+      }
+      if (this.p2Clock) {
+        this.p2Clock.textContent = p2Clock;
+        this.p2Clock.classList.remove('hidden');
+      }
+    } else {
+      this.p1Clock?.classList.add('hidden');
+      this.p2Clock?.classList.add('hidden');
+    }
 
     // Highlight current player turn
     if (currentPlayer === 0) {

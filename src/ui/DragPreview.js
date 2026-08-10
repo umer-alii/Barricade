@@ -3,57 +3,81 @@
  */
 
 export class DragPreview {
-  /**
-   * @param {HTMLElement} boardContainer - The parent board container
-   */
   constructor(boardContainer) {
     this.boardContainer = boardContainer;
     this.element = document.createElement('div');
     this.element.className = 'wall-preview hidden';
     this.boardContainer.appendChild(this.element);
+
+    this._col = null;
+    this._row = null;
+    this._orientation = null;
+    this._isValid = null;
+    this._visible = false;
   }
 
-  /**
-   * Update and show the preview wall at the calculated grid intersection
-   *
-   * @param {number} col - 0-indexed column anchor (0 to 7)
-   * @param {number} row - 0-indexed row anchor (0 to 7)
-   * @param {string} orientation - 'h' or 'v'
-   * @param {boolean} isValid - Whether this placement is valid under current rules
-   */
   show(col, row, orientation, isValid) {
-    // Clear dynamic classes, keep core preview identifier
-    this.element.className = 'wall-preview';
-    
-    // Add orientation and validation styling
+    const sameSlot = this._visible
+      && this._col === col
+      && this._row === row
+      && this._orientation === orientation;
+
+    if (sameSlot && this._isValid === isValid) {
+      return;
+    }
+
+    this._col = col;
+    this._row = row;
+    this._orientation = orientation;
+    this._isValid = isValid;
+    this._visible = true;
+
     const orientationClass = orientation === 'h' ? 'wall-horizontal' : 'wall-vertical';
     const validityClass = isValid ? 'preview-valid' : 'preview-invalid';
-    
-    this.element.classList.add(orientationClass, validityClass);
 
-    // Apply layout mapping in CSS grid
-    if (orientation === 'h') {
-      this.element.style.gridRow = `${16 - 2 * row}`;
-      this.element.style.gridColumn = `${2 * col + 1} / span 3`;
+    if (!sameSlot) {
+      this.element.className = 'wall-preview preview-enter';
+      this.element.classList.add(orientationClass, validityClass);
+
+      if (orientation === 'h') {
+        this.element.style.gridRow = `${16 - 2 * row}`;
+        this.element.style.gridColumn = `${2 * col + 1} / span 3`;
+      } else {
+        this.element.style.gridColumn = `${2 * col + 2}`;
+        this.element.style.gridRow = `${15 - 2 * row} / span 3`;
+      }
+
+      requestAnimationFrame(() => {
+        this.element.classList.remove('preview-enter');
+        this.element.classList.add('preview-visible');
+      });
     } else {
-      this.element.style.gridColumn = `${2 * col + 2}`;
-      this.element.style.gridRow = `${15 - 2 * row} / span 3`;
+      this.element.classList.remove('preview-valid', 'preview-invalid');
+      this.element.classList.add(validityClass);
     }
   }
 
-  /**
-   * Hide the preview element
-   */
   hide() {
-    this.element.className = 'wall-preview hidden';
-    this.element.style.gridRow = '';
-    this.element.style.gridColumn = '';
+    if (!this._visible) return;
+
+    this._visible = false;
+    this._col = null;
+    this._row = null;
+    this._orientation = null;
+    this._isValid = null;
+
+    this.element.classList.remove('preview-visible', 'preview-enter');
+    this.element.classList.add('preview-exit');
+
+    window.setTimeout(() => {
+      if (this._visible) return;
+      this.element.classList.remove('preview-exit', 'preview-valid', 'preview-invalid');
+      this.element.className = 'wall-preview hidden';
+      this.element.style.gridRow = '';
+      this.element.style.gridColumn = '';
+    }, 220);
   }
 
-  /**
-   * Re-append the preview element to the board container (needed after board clears)
-   * @param {HTMLElement} boardContainer
-   */
   reappend(boardContainer) {
     this.boardContainer = boardContainer;
     if (this.element.parentElement !== this.boardContainer) {

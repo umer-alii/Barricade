@@ -34,6 +34,7 @@ export class Renderer {
 
     // Track which walls have already been rendered to avoid re-flashing them
     this.renderedWallKeys = new Set();
+    this.wallElements = new Map();
 
     // Generate board cells: row index 8 (top) down to index 0 (bottom)
     for (let r = 8; r >= 0; r--) {
@@ -114,13 +115,15 @@ export class Renderer {
   renderPlayers(players) {
     players.forEach((player, idx) => {
       const cellElement = this.cellElements[player.row][player.col];
-      if (cellElement && this.tokens[idx].parentElement !== cellElement) {
-        // Trigger subtle movement animation
+      if (!cellElement) return;
+
+      const moved = this.tokens[idx].parentElement !== cellElement;
+      if (moved) {
         this.tokens[idx].classList.remove('move-pulse');
-        void this.tokens[idx].offsetWidth; // trigger reflow
+        void this.tokens[idx].offsetWidth;
         this.tokens[idx].classList.add('move-pulse');
-        cellElement.appendChild(this.tokens[idx]);
       }
+      cellElement.appendChild(this.tokens[idx]);
     });
   }
 
@@ -164,6 +167,7 @@ export class Renderer {
       wallDiv.style.gridRow = `${16 - 2 * wall.row}`;
       wallDiv.style.gridColumn = `${2 * wall.col + 1} / span 3`;
       this.container.appendChild(wallDiv);
+      this.wallElements.set(key, wallDiv);
     });
 
     // Vertical walls
@@ -178,7 +182,30 @@ export class Renderer {
       wallDiv.style.gridColumn = `${2 * wall.col + 2}`;
       wallDiv.style.gridRow = `${15 - 2 * wall.row} / span 3`;
       this.container.appendChild(wallDiv);
+      this.wallElements.set(key, wallDiv);
     });
+  }
+
+  /**
+   * Mark the destination cell of the most recent pawn move.
+   * Pass null to clear.
+   */
+  setLastMoveCell(col, row) {
+    this.container.querySelectorAll('.cell-last-move').forEach(el => el.classList.remove('cell-last-move'));
+    if (col === null || col === undefined) return;
+    const cell = this.cellElements[row]?.[col];
+    if (cell) cell.classList.add('cell-last-move');
+  }
+
+  /**
+   * Mark the most recently placed wall with a glow.
+   * Pass null orientation to clear.
+   */
+  setLatestWall(orientation, col, row) {
+    this.container.querySelectorAll('.wall-latest').forEach(el => el.classList.remove('wall-latest'));
+    if (!orientation) return;
+    const el = this.wallElements.get(`${orientation},${col},${row}`);
+    if (el) el.classList.add('wall-latest');
   }
 
   /**
@@ -189,6 +216,7 @@ export class Renderer {
     const existing = this.container.querySelectorAll('.wall-placed');
     existing.forEach(el => el.remove());
     this.renderedWallKeys = new Set();
+    this.wallElements = new Map();
   }
 
   /**
