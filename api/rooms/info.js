@@ -1,6 +1,6 @@
-import { getRoom } from '../lib/roomStore.js';
-import { jsonResponse, handleCors } from '../lib/roomUtils.js';
-import { parseTimeControl } from '../lib/timeControl.js';
+import { getRoom } from '../_lib/roomStore.js';
+import { jsonResponse, handleCors } from '../_lib/roomUtils.js';
+import { parseTimeControl } from '../_lib/timeControl.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;

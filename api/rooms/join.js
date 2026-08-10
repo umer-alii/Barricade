@@ -1,6 +1,6 @@
-import { getRoom, setRoom } from '../lib/roomStore.js';
-import { generateToken, createInitialGameState, jsonResponse, handleCors } from '../lib/roomUtils.js';
-import { verifySupabaseUser, isSupabaseAdminConfigured } from '../lib/supabaseAdmin.js';
+import { getRoom, setRoom } from '../_lib/roomStore.js';
+import { generateToken, createInitialGameState, jsonResponse, handleCors } from '../_lib/roomUtils.js';
+import { verifySupabaseUser, isSupabaseAdminConfigured } from '../_lib/supabaseAdmin.js';
 
 const joinLocks = new Set();
 

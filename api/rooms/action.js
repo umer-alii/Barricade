@@ -1,7 +1,7 @@
-import { getRoom, setRoom } from '../lib/roomStore.js';
-import { findPlayerByToken, jsonResponse, handleCors, createInitialGameState } from '../lib/roomUtils.js';
-import { applyAction } from '../lib/gameActions.js';
-import { settleRankedRoom } from '../lib/ranking.js';
+import { getRoom, setRoom } from '../_lib/roomStore.js';
+import { findPlayerByToken, jsonResponse, handleCors, createInitialGameState } from '../_lib/roomUtils.js';
+import { applyAction } from '../_lib/gameActions.js';
+import { settleRankedRoom } from '../_lib/ranking.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;

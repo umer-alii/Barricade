@@ -244,8 +244,8 @@ async function testSecurity() {
 async function testRankedSettlementGuards() {
   console.log('\n─── 7. Ranked settlement guards (server-side, in-process) ───');
 
-  const { computeElo, settleRankedRoom, ELO_FLOOR } = await import('../api/lib/ranking.js');
-  const { verifySupabaseUser, isSupabaseAdminConfigured } = await import('../api/lib/supabaseAdmin.js');
+  const { computeElo, settleRankedRoom, ELO_FLOOR } = await import('../api/_lib/ranking.js');
+  const { verifySupabaseUser, isSupabaseAdminConfigured } = await import('../api/_lib/supabaseAdmin.js');
 
   const even = computeElo(1000, 1000, 1);
   ok(even.newA === 1016 && even.newB === 984, 'Elo 1000v1000: winner +16 / loser −16 (K=32)');
@@ -282,8 +282,8 @@ async function testRankedSettlementGuards() {
 async function testTimeoutLogic() {
   console.log('\n─── 8. Timeout detection (in-process, shared logic) ───');
 
-  const { checkTimeout } = await import('../api/lib/timeControl.js');
-  const { createInitialGameState } = await import('../api/lib/roomUtils.js');
+  const { checkTimeout } = await import('../api/_lib/timeControl.js');
+  const { createInitialGameState } = await import('../api/_lib/roomUtils.js');
 
   const state = createInitialGameState('5+3 (Blitz)');
   ok(checkTimeout(state) === null, 'fresh clocks → no timeout');
