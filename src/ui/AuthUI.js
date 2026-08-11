@@ -40,7 +40,7 @@ export class AuthUI {
   requireLogin(message) {
     if (!isSupabaseConfigured()) {
       if (message) this.toast.show(message);
-      this.open('setup');
+      this.open('signin');
       return false;
     }
     if (isLoggedIn() && getProfile()) return true;
@@ -50,9 +50,6 @@ export class AuthUI {
   }
 
   open(view = 'signin') {
-    if (!isSupabaseConfigured() && view !== 'setup') {
-      view = 'setup';
-    }
     this._showView(view);
     this._setError('');
     this.modal?.classList.remove('hidden');
@@ -65,7 +62,6 @@ export class AuthUI {
   // ─── internal ──────────────────────────────────────────────────────────────
 
   _showView(view) {
-    this.modal?.querySelector('.auth-tabs')?.classList.toggle('hidden', view === 'setup');
     this.modal?.querySelectorAll('[data-auth-view]').forEach(el => {
       el.classList.toggle('hidden', el.dataset.authView !== view);
     });
@@ -113,6 +109,7 @@ export class AuthUI {
 
     document.getElementById('auth-signin-btn')?.addEventListener('click', (e) => {
       this._busy(e.currentTarget, async () => {
+        if (!isSupabaseConfigured()) throw new Error('Account login is not enabled on this server yet.');
         const email = document.getElementById('auth-signin-email')?.value?.trim();
         const password = document.getElementById('auth-signin-password')?.value;
         if (!email || !password) throw new Error('Enter your email and password');
@@ -125,6 +122,7 @@ export class AuthUI {
 
     document.getElementById('auth-register-btn')?.addEventListener('click', (e) => {
       this._busy(e.currentTarget, async () => {
+        if (!isSupabaseConfigured()) throw new Error('Account login is not enabled on this server yet.');
         const email = document.getElementById('auth-register-email')?.value?.trim();
         const password = document.getElementById('auth-register-password')?.value;
         if (!email || !password) throw new Error('Enter an email and password');
@@ -151,7 +149,10 @@ export class AuthUI {
 
     this.modal.querySelectorAll('[data-oauth]').forEach(btn => {
       btn.addEventListener('click', () => {
-        this._busy(btn, () => signInOAuth(btn.dataset.oauth));
+        this._busy(btn, async () => {
+          if (!isSupabaseConfigured()) throw new Error('Account login is not enabled on this server yet.');
+          await signInOAuth(btn.dataset.oauth);
+        });
       });
     });
 

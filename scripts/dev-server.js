@@ -1,13 +1,18 @@
 /**
  * Local development server — serves static files + API routes.
  * Run: npm run dev:local
- * For production-like testing with Vercel: npm run dev (requires vercel login)
+ *
+ * Reads .env automatically (copy .env.example → .env).
+ * Works the same way on any production host — just set the same env vars.
  */
 
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { loadEnvFile } from './loadEnv.js';
+
+loadEnvFile();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');

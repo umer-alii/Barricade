@@ -2,3 +2,5 @@ node_modules/
 .DS_Store
 *.log
 .dev-room-store.json
+.env
+src/config/supabase.local.js

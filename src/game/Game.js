@@ -644,7 +644,7 @@ export class Game {
       list.innerHTML = '';
       const empty = document.createElement('p');
       empty.className = 'leaderboard-empty';
-      empty.textContent = 'Sign in to compete — accounts activate once Supabase is configured on the server.';
+      empty.textContent = 'Sign in and play ranked to appear on the leaderboard.';
       list.appendChild(empty);
       pager?.classList.add('hidden');
       return;
