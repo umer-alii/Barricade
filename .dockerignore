@@ -1,0 +1,9 @@
+node_modules
+.git
+.env
+.env.local
+.vercel
+.dev-room-store.json
+scratch
+docs
+*.log

@@ -1,0 +1,28 @@
+# Render Blueprint — free tier, one Node process serving static files + API.
+# Deploy: render.com → New → Blueprint → point at this repo.
+#
+# A single process means rooms live in memory and Upstash is optional here,
+# unlike Vercel where each request may hit a different instance.
+services:
+  - type: web
+    name: barricade
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node scripts/dev-server.js
+    healthCheckPath: /api/rooms/list
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # Set these in the Render dashboard (Environment tab) to enable accounts.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # Optional here — only needed if you scale beyond one instance.
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false

@@ -106,12 +106,27 @@ Finally, in Supabase → **Authentication → URL Configuration**, set the Site 
 to your deployed origin and add it to Redirect URLs, otherwise Google/Discord
 logins bounce back to localhost.
 
-### Railway / Fly.io / Render / Docker / VPS
-Set the same env vars in your platform's dashboard, run:
+### Render (free, and simpler than Vercel)
+
+`render.yaml` is already in the repo, so: render.com → **New → Blueprint** →
+pick this repo → add the env vars in the **Environment** tab → deploy.
+
+Render runs **one persistent Node process**, so rooms live in memory and
+**Upstash is not required** — only Supabase, and only if you want accounts.
+The free tier sleeps after ~15 minutes idle, so the first request afterwards
+takes roughly a minute to wake.
+
+### Railway / Fly.io / Docker / VPS
+
+A `Dockerfile` is included:
+
 ```bash
-node scripts/dev-server.js
+docker build -t barricade .
+docker run -p 3000:3000 --env-file .env barricade
 ```
-Or deploy the `api/` folder as serverless functions + static files (see `vercel.json` for reference).
+
+Without Docker, set the env vars and run `node scripts/dev-server.js`. It honours
+`PORT` and binds all interfaces, which is what these platforms expect.
 
 ---
 
