@@ -1,5 +1,5 @@
-import { getRoom, deleteRoom } from '../_lib/roomStore.js';
-import { findPlayerByToken, jsonResponse, handleCors } from '../_lib/roomUtils.js';
+import { getRoom, deleteRoom } from '../roomStore.js';
+import { findPlayerByToken, jsonResponse, handleCors } from '../roomUtils.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;

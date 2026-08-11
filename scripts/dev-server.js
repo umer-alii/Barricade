@@ -78,26 +78,10 @@ async function handleApi(req, res) {
   const mockRes = createMockRes();
 
   try {
-    if (pathname === '/api/rooms/create') {
-      const mod = await import('../api/rooms/create.js');
-      await mod.default(mockReq, mockRes);
-    } else if (pathname === '/api/rooms/list') {
-      const mod = await import('../api/rooms/list.js');
-      await mod.default(mockReq, mockRes);
-    } else if (pathname === '/api/rooms/join') {
-      const mod = await import('../api/rooms/join.js');
-      await mod.default(mockReq, mockRes);
-    } else if (pathname === '/api/rooms/poll') {
-      const mod = await import('../api/rooms/poll.js');
-      await mod.default(mockReq, mockRes);
-    } else if (pathname === '/api/rooms/action') {
-      const mod = await import('../api/rooms/action.js');
-      await mod.default(mockReq, mockRes);
-    } else if (pathname === '/api/rooms/info') {
-      const mod = await import('../api/rooms/info.js');
-      await mod.default(mockReq, mockRes);
-    } else if (pathname === '/api/rooms/delete') {
-      const mod = await import('../api/rooms/delete.js');
+    const match = pathname.match(/^\/api\/rooms\/(\w+)$/);
+    if (match) {
+      mockReq.query.endpoint = match[1];
+      const mod = await import('../api/rooms/[endpoint].js');
       await mod.default(mockReq, mockRes);
     } else {
       return false;

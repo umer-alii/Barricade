@@ -1,5 +1,5 @@
-import { listRooms } from '../_lib/roomStore.js';
-import { jsonResponse, handleCors } from '../_lib/roomUtils.js';
+import { listRooms } from '../roomStore.js';
+import { jsonResponse, handleCors } from '../roomUtils.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;

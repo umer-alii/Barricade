@@ -1,12 +1,12 @@
-import { getRoom, setRoom } from '../_lib/roomStore.js';
+import { getRoom, setRoom } from '../roomStore.js';
 import {
   generateRoomCode,
   generateToken,
   createRoomObject,
   jsonResponse,
   handleCors
-} from '../_lib/roomUtils.js';
-import { verifySupabaseUser, isSupabaseAdminConfigured } from '../_lib/supabaseAdmin.js';
+} from '../roomUtils.js';
+import { verifySupabaseUser, isSupabaseAdminConfigured } from '../supabaseAdmin.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;

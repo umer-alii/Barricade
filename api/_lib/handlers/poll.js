@@ -1,7 +1,7 @@
-import { getRoom, setRoom } from '../_lib/roomStore.js';
-import { findPlayerByToken, jsonResponse, handleCors } from '../_lib/roomUtils.js';
-import { checkTimeout } from '../_lib/timeControl.js';
-import { settleRankedRoom } from '../_lib/ranking.js';
+import { getRoom, setRoom } from '../roomStore.js';
+import { findPlayerByToken, jsonResponse, handleCors } from '../roomUtils.js';
+import { checkTimeout } from '../timeControl.js';
+import { settleRankedRoom } from '../ranking.js';
 
 const DISCONNECT_THRESHOLD_MS = 30000;
 
