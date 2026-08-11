@@ -30,10 +30,10 @@ routes (Vercel-style) power online multiplayer.
 
 ```bash
 npm install
-npm run dev:local     # node scripts/dev-server.js → http://localhost:3000
+npm run dev     # node scripts/dev-server.js → http://localhost:3000
 ```
 
-- `npm run dev:local` serves static files AND mounts the `api/` routes locally.
+- `npm run dev` serves static files AND mounts the `api/` routes locally.
 - `npm run dev` uses `vercel dev` instead (emulates Vercel platform).
 - No build/transpile step: the browser loads `src/main.js` as an ES module from `index.html`.
 

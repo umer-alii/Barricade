@@ -19,10 +19,15 @@ Local/AI/puzzle modes work **without any setup**.
 ```bash
 npm install
 cp .env.example .env
-npm run dev:local
+npm run dev
 ```
 
-Open http://localhost:3000
+Open http://localhost:3000. At any point, check what's actually enabled:
+
+```bash
+npm run check                                  # local
+node scripts/check-deploy.js https://your-site # a deployment
+```
 
 ### 2. Upstash (online multiplayer)
 
@@ -79,7 +84,27 @@ The client loads Supabase config automatically from `/api/rooms/config` (reads e
 No Vercel-specific steps required.
 
 ### Vercel
-Project → Settings → Environment Variables → add the vars above → Redeploy
+
+Either add them by hand in Project → Settings → Environment Variables, or push
+your finished `.env` up in one command:
+
+```bash
+npx vercel login
+npx vercel link          # pick the existing Barricade project
+npm run sync:vercel      # copies .env to production, preview and development
+npx vercel --prod        # redeploy so the new values take effect
+```
+
+Environment variables only apply to **new** deployments, so the redeploy is
+required. Then confirm:
+
+```bash
+node scripts/check-deploy.js https://your-site.vercel.app
+```
+
+Finally, in Supabase → **Authentication → URL Configuration**, set the Site URL
+to your deployed origin and add it to Redirect URLs, otherwise Google/Discord
+logins bounce back to localhost.
 
 ### Railway / Fly.io / Render / Docker / VPS
 Set the same env vars in your platform's dashboard, run:

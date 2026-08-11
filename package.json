@@ -7,9 +7,11 @@
     "node": ">=18"
   },
   "scripts": {
-    "dev": "npx vercel dev",
-    "dev:local": "node scripts/dev-server.js",
-    "start": "node scripts/dev-server.js"
+    "dev": "node scripts/dev-server.js",
+    "start": "node scripts/dev-server.js",
+    "check": "node scripts/check-deploy.js",
+    "sync:vercel": "node scripts/sync-vercel-env.js",
+    "test": "node scratch/verify.js && node scratch/test_puzzles.js"
   },
   "dependencies": {
     "@upstash/redis": "^1.34.3"
