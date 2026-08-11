@@ -171,7 +171,7 @@
           <h3 class="card-title">🏆 Top Players</h3>
           <!-- Live leaderboard: populated from Supabase profiles (Elo desc) -->
           <div class="leaderboard-list" id="leaderboard-list">
-            <p class="leaderboard-empty" id="leaderboard-empty">Leaderboard unavailable — accounts not configured.</p>
+            <p class="leaderboard-empty" id="leaderboard-empty">Sign in to track your rating — leaderboard loads once accounts are enabled.</p>
           </div>
           <div class="leaderboard-pager hidden" id="leaderboard-pager">
             <button class="btn-mini" id="leaderboard-prev">‹ Prev</button>
@@ -474,6 +474,21 @@
         <input type="text" class="auth-input" id="auth-username-input" placeholder="Username (2-16 chars)"
           maxlength="16" autocomplete="off">
         <button class="btn-secondary auth-submit" id="auth-username-btn">Claim Username</button>
+      </div>
+
+      <!-- Server not configured yet -->
+      <div class="auth-view hidden" data-auth-view="setup">
+        <p class="auth-hint">Account login requires Supabase to be configured on the server. Ask the site admin to add
+          these in <strong>Vercel → Settings → Environment Variables</strong>, then redeploy:</p>
+        <ul class="auth-setup-list">
+          <li><code>SUPABASE_URL</code> — your project URL</li>
+          <li><code>SUPABASE_ANON_KEY</code> — public anon key</li>
+          <li><code>SUPABASE_SERVICE_ROLE_KEY</code> — for ranked rating updates (server only)</li>
+        </ul>
+        <p class="auth-hint">Also run <code>supabase/schema.sql</code> in the Supabase SQL editor. See
+          <code>docs/ACCOUNTS_SETUP.md</code> for full steps.</p>
+        <p class="auth-hint">Casual online play works without accounts. Local, AI, and puzzle modes are always
+          available.</p>
       </div>
     </div>
   </div>

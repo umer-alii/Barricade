@@ -22,7 +22,7 @@ import { formatClock, formatTimeControlLabel, getDisplayClocks } from '../utils/
 import { getDailyPuzzles, formatPuzzleDate, PUZZLES_PER_DAY } from '../puzzle/PuzzleGenerator.js';
 import { replayHistory, applyNotationMove } from '../puzzle/PuzzleEngine.js';
 import { getProgressForDate, recordAttempt, recordGiveUp, countCompleted } from '../puzzle/PuzzleProgress.js';
-import { isSupabaseConfigured } from '../config/supabaseConfig.js';
+import { isSupabaseConfigured, loadSupabaseConfig } from '../config/supabaseConfig.js';
 import { isLoggedIn, getProfile, getAccessToken, fetchMyProfile } from '../network/SupabaseClient.js';
 import { fetchLeaderboard, subscribeLeaderboard, tierForRating, LEADERBOARD_PAGE_SIZE } from '../social/Leaderboard.js';
 import { sendDirectMessage } from '../social/Chat.js';
@@ -593,7 +593,7 @@ export class Game {
 
   // --- Accounts / Friends / Chat / Live Leaderboard ---
 
-  initAccountFeatures() {
+  async initAccountFeatures() {
     this.authUI = new AuthUI(this.toast);
     this.chatUI = new ChatUI(this.toast);
     this.friendsUI = new FriendsUI({
@@ -618,7 +618,6 @@ export class Game {
 
     document.addEventListener('barricade:auth-changed', (e) => {
       if (!e.detail.loggedIn) {
-        // Back to guest identity: restore localStorage nickname/stats display
         this._syncProfileUI();
         this._renderStats();
         const ratingEl = document.getElementById('profile-rating-display');
@@ -627,19 +626,29 @@ export class Game {
       this._refreshLeaderboard();
     });
 
-    this.authUI.init();
+    await loadSupabaseConfig();
+    await this.authUI.init();
 
+    await this._refreshLeaderboard();
     if (isSupabaseConfigured()) {
-      this._refreshLeaderboard();
       subscribeLeaderboard(() => this._refreshLeaderboard());
     }
   }
 
   async _refreshLeaderboard() {
-    if (!isSupabaseConfigured()) return;
     const list = document.getElementById('leaderboard-list');
     const pager = document.getElementById('leaderboard-pager');
     if (!list) return;
+
+    if (!isSupabaseConfigured()) {
+      list.innerHTML = '';
+      const empty = document.createElement('p');
+      empty.className = 'leaderboard-empty';
+      empty.textContent = 'Sign in to compete — accounts activate once Supabase is configured on the server.';
+      list.appendChild(empty);
+      pager?.classList.add('hidden');
+      return;
+    }
 
     const { rows, total } = await fetchLeaderboard(this._lbPage);
     // Page drifted past the end (e.g. after realtime shrink) → snap back

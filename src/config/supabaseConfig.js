@@ -1,18 +1,45 @@
 /**
- * Supabase project configuration (client side).
+ * Supabase configuration — loaded at runtime.
  *
- * Fill these in with your project's values from
- * Supabase Dashboard → Project Settings → API.
- * The anon key is safe to ship to the browser (RLS protects the data).
+ * Priority:
+ *  1. Values baked into this file (fine for local dev)
+ *  2. /api/rooms/config (reads Vercel env vars in production)
  *
- * When left empty, all account features (login, friends, chat, ranked,
- * live leaderboard) gracefully disable themselves and the game runs
- * exactly as before: local / ai / puzzle / casual online.
+ * The anon key is public; RLS protects the data.
  */
 
-export const SUPABASE_URL = '';
-export const SUPABASE_ANON_KEY = '';
+// Optional local overrides — leave empty to use server env on Vercel
+const FILE_URL = '';
+const FILE_ANON_KEY = '';
+
+let url = FILE_URL;
+let anonKey = FILE_ANON_KEY;
+let loadPromise = null;
+
+export function getSupabaseUrl() { return url; }
+export function getSupabaseAnonKey() { return anonKey; }
 
 export function isSupabaseConfigured() {
-  return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+  return Boolean(url && anonKey);
+}
+
+/** Fetch public Supabase config from the server (Vercel env vars). */
+export async function loadSupabaseConfig() {
+  if (loadPromise) return loadPromise;
+  loadPromise = (async () => {
+    if (!url || !anonKey) {
+      try {
+        const res = await fetch('/api/rooms/config');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) url = data.url;
+          if (data.anonKey) anonKey = data.anonKey;
+        }
+      } catch (err) {
+        console.warn('Could not load Supabase config from server:', err.message);
+      }
+    }
+    return isSupabaseConfigured();
+  })();
+  return loadPromise;
 }

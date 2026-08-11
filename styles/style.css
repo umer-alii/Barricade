@@ -3352,6 +3352,20 @@ body.light-theme .auth-input {
   margin: 0;
 }
 
+.auth-setup-list {
+  margin: 0.5rem 0 0.75rem 1.1rem;
+  padding: 0;
+  font-size: 0.78rem;
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+.auth-setup-list code {
+  font-family: 'Outfit', monospace;
+  font-size: 0.72rem;
+  color: #818cf8;
+}
+
 .auth-error {
   padding: 0.5rem 0.7rem;
   border-radius: 8px;

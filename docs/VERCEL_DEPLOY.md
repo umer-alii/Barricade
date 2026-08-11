@@ -27,6 +27,9 @@ On Vercel, each API request may hit a **different serverless instance** with its
 |---|---|
 | `UPSTASH_REDIS_REST_URL` | From Upstash dashboard → REST URL |
 | `UPSTASH_REDIS_REST_TOKEN` | From Upstash dashboard → REST token |
+| `SUPABASE_URL` | Supabase project URL (enables login, friends, chat, leaderboard) |
+| `SUPABASE_ANON_KEY` | Supabase **anon/public** key (safe for browser — loaded via `/api/rooms/config`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only — ranked Elo settlement |
 
 3. **Redeploy** after saving env vars.
 

@@ -10,6 +10,7 @@ import handlePoll from '../_lib/handlers/poll.js';
 import handleList from '../_lib/handlers/list.js';
 import handleInfo from '../_lib/handlers/info.js';
 import handleDelete from '../_lib/handlers/delete.js';
+import handleConfig from '../_lib/handlers/config.js';
 
 const routes = {
   create: handleCreate,
@@ -18,7 +19,8 @@ const routes = {
   poll: handlePoll,
   list: handleList,
   info: handleInfo,
-  delete: handleDelete
+  delete: handleDelete,
+  config: handleConfig
 };
 
 export default async function handler(req, res) {

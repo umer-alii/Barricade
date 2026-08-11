@@ -6,7 +6,7 @@
  * lobby profile card and exposes requireLogin() for ranked/friends/chat gating.
  */
 
-import { isSupabaseConfigured } from '../config/supabaseConfig.js';
+import { isSupabaseConfigured, loadSupabaseConfig } from '../config/supabaseConfig.js';
 import {
   initAuth, onAuthChange, isLoggedIn, getProfile, getSession,
   signInEmail, signUpEmail, signInOAuth, sendPasswordReset, signOut,
@@ -25,22 +25,22 @@ export class AuthUI {
 
   /** Start session restore; resolves when initial auth state is known. */
   async init() {
-    if (!isSupabaseConfigured()) {
-      this.renderAccountState();
-      return;
-    }
+    await loadSupabaseConfig();
     onAuthChange(() => this.renderAccountState());
-    await initAuth();
-    // First login without a profile row → force the username picker
-    if (isLoggedIn() && !getProfile()) {
-      this.open('username');
+    if (isSupabaseConfigured()) {
+      await initAuth();
+      if (isLoggedIn() && !getProfile()) {
+        this.open('username');
+      }
     }
+    this.renderAccountState();
   }
 
   /** Gate an action behind login. Returns true if logged in with a profile. */
   requireLogin(message) {
     if (!isSupabaseConfigured()) {
-      this.toast.show('Accounts are not configured on this deployment.');
+      if (message) this.toast.show(message);
+      this.open('setup');
       return false;
     }
     if (isLoggedIn() && getProfile()) return true;
@@ -50,6 +50,9 @@ export class AuthUI {
   }
 
   open(view = 'signin') {
+    if (!isSupabaseConfigured() && view !== 'setup') {
+      view = 'setup';
+    }
     this._showView(view);
     this._setError('');
     this.modal?.classList.remove('hidden');
@@ -62,6 +65,7 @@ export class AuthUI {
   // ─── internal ──────────────────────────────────────────────────────────────
 
   _showView(view) {
+    this.modal?.querySelector('.auth-tabs')?.classList.toggle('hidden', view === 'setup');
     this.modal?.querySelectorAll('[data-auth-view]').forEach(el => {
       el.classList.toggle('hidden', el.dataset.authView !== view);
     });
@@ -205,9 +209,9 @@ export class AuthUI {
     const friendsCard = document.getElementById('friends-card');
     const configured = isSupabaseConfigured();
 
-    signinBtn?.classList.toggle('hidden', !configured || loggedIn);
+    signinBtn?.classList.toggle('hidden', loggedIn);
     signoutBtn?.classList.toggle('hidden', !loggedIn);
-    friendsCard?.classList.toggle('hidden', !(loggedIn && profile));
+    friendsCard?.classList.toggle('hidden', !(loggedIn && profile && configured));
 
     if (idBadge) {
       idBadge.classList.toggle('hidden', !profile);

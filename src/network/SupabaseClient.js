@@ -6,7 +6,7 @@
  * resolves to null/no-op so the rest of the game is unaffected.
  */
 
-import { SUPABASE_URL, SUPABASE_ANON_KEY, isSupabaseConfigured } from '../config/supabaseConfig.js';
+import { getSupabaseUrl, getSupabaseAnonKey, isSupabaseConfigured } from '../config/supabaseConfig.js';
 
 const SDK_URL = 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -23,7 +23,7 @@ export function getSupabase() {
   if (!isSupabaseConfigured()) return Promise.resolve(null);
   if (!clientPromise) {
     clientPromise = import(SDK_URL)
-      .then(({ createClient }) => createClient(SUPABASE_URL, SUPABASE_ANON_KEY))
+      .then(({ createClient }) => createClient(getSupabaseUrl(), getSupabaseAnonKey()))
       .catch(err => {
         console.error('Failed to load Supabase SDK:', err);
         clientPromise = null;
