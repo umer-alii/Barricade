@@ -1,5 +1,5 @@
 import { getRoom, deleteRoom } from '../roomStore.js';
-import { findPlayerByToken, jsonResponse, handleCors } from '../roomUtils.js';
+import { findPlayerByToken, jsonResponse, handleCors, normalizeRoomCode } from '../roomUtils.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   }
 
   const { code, token } = req.body || {};
-  const normalizedCode = (code || '').toUpperCase().trim();
+  const normalizedCode = normalizeRoomCode(code);
 
   if (!normalizedCode) {
     return jsonResponse(res, 400, { error: 'Room code required' });

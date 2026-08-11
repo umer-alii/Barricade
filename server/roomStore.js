@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DEV_STORE_PATH = path.join(__dirname, '..', '..', '.dev-room-store.json');
+const DEV_STORE_PATH = path.join(__dirname, '..', '.dev-room-store.json');
 
 const memoryStore = new Map();
 let redis = null;

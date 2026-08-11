@@ -3,12 +3,12 @@
  * Reuses the same game logic modules as the client.
  */
 
-import { GameState } from '../../src/game/GameState.js';
-import { TurnManager } from '../../src/game/TurnManager.js';
-import { validateWall } from '../../src/walls/WallValidator.js';
-import { getLegalMoves } from '../../src/players/Movement.js';
-import { cellToNotation, wallToNotation } from '../../src/utils/Coordinates.js';
-import { WALL_ORIENTATIONS } from '../../src/utils/Constants.js';
+import { GameState } from '../src/game/GameState.js';
+import { TurnManager } from '../src/game/TurnManager.js';
+import { validateWall } from '../src/walls/WallValidator.js';
+import { getLegalMoves } from '../src/players/Movement.js';
+import { cellToNotation, wallToNotation } from '../src/utils/Coordinates.js';
+import { WALL_ORIENTATIONS } from '../src/utils/Constants.js';
 import { applyMoveClock } from './timeControl.js';
 
 const turnManager = new TurnManager();

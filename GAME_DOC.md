@@ -254,7 +254,7 @@ attempts, actions. Solution is never shown before give-up.
   heartbeat (`lastSeen`), flags opponent disconnect after 30 s silence, and applies
   clock-timeout wins.
 - Actions: `POST /api/rooms/action` `{token, action}`; server validates with
-  `api/lib/gameActions.js` (same logic modules as the client — moves, jumps, walls, path
+  `server/gameActions.js` (same logic modules as the client — moves, jumps, walls, path
   checks) and increments `version`. Client applies authoritative `gameState` via
   `GameState.applyServerState()`.
 - Rooms live in Upstash Redis (prod) or in-memory + `.dev-room-store.json` (dev).
@@ -266,7 +266,7 @@ attempts, actions. Solution is never shown before give-up.
   `resignedBy`, so the client win modal shows the right message ("You resigned", "Opponent
   resigned", "Time out", or plain goal win).
 
-**Time control** (`api/lib/timeControl.js`, mirrored client-side in `src/utils/timeControl.js`):
+**Time control** (`server/timeControl.js`, mirrored client-side in `src/utils/timeControl.js`):
 - Strings like `"15+10 (Rapid)"` (base minutes + increment seconds) or `"Unlimited"`.
 - Clock state on gameState: `{timeControl, timeControlLabel, isUnlimited, incrementMs,
   clocks:[ms,ms], lastMoveAt}`. `applyMoveClock` deducts elapsed, adds increment;
@@ -341,7 +341,7 @@ cleared on win-modal display.
 
 - Plain ES modules, no TypeScript, no bundler — keep imports relative with `.js` extensions.
 - Client and server share logic: any rules change must stay consistent between `src/` and
-  `api/lib/gameActions.js`.
+  `server/gameActions.js`.
 - After changes run: `node scratch/verify.js` (mechanics) and `node scratch/test_puzzles.js`
   (puzzles). For bot changes, `node scratch/bot_matchup.js hard medium 2` is a fast ladder check.
 - The state that is saved/restored must round-trip through `GameState.serialize()` /

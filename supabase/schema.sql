@@ -212,7 +212,7 @@ revoke execute on function public.create_profile_with_stats from public;
 grant execute on function public.create_profile_with_stats to authenticated;
 
 -- ============================================================================
--- RPC: ranked match settlement (SERVICE ROLE ONLY — called by api/lib/ranking.js)
+-- RPC: ranked match settlement (SERVICE ROLE ONLY — called by server/ranking.js)
 -- Atomic: Elo for both players + wins/losses + matches row + rating_history.
 -- ============================================================================
 

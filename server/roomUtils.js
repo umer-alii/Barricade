@@ -60,6 +60,14 @@ export function createRoomObject(code, hostToken, hostName = 'Player 1') {
   };
 }
 
+/**
+ * Coerce untrusted input into a normalized room code.
+ * Non-string values (objects, numbers, null) yield '' rather than throwing.
+ */
+export function normalizeRoomCode(value) {
+  return typeof value === 'string' ? value.trim().toUpperCase() : '';
+}
+
 export function findPlayerByToken(room, token) {
   if (!room || !token) return null;
   for (const player of room.players) {

@@ -1,58 +1,80 @@
-# Vercel deployment
+# Deploying Barricade
 
-## Why deployment failed (Hobby plan)
+Works on any host. Vercel specifics are called out where relevant.
 
-Vercel Hobby allows **max 12 serverless functions** per deployment. The old layout counted **13**:
+## Project layout
 
-| Endpoint | Count |
+| Path | Role |
 |---|---|
-| `api/rooms/create`, `join`, `poll`, `action`, `list`, `info`, `delete` | 7 |
-| `api/lib/gameActions`, `roomStore`, `roomUtils`, etc. (helpers mistaken for endpoints) | 6 |
-| **Total** | **13 → rejected** |
+| `api/rooms/[endpoint].js` | The **only** serverless function — routes every `/api/rooms/*` request |
+| `server/` | All server logic (handlers, room store, rules, ranking). Outside `api/` on purpose |
+| `src/`, `index.html`, `styles/` | Static client, served as-is |
+| `scripts/dev-server.js` | Local/self-hosted server (static + API in one process) |
 
-**Fix:** helpers live in `api/_lib/` (ignored by Vercel), and all room routes share **one** function: `api/rooms/[endpoint].js`.
+### Why one function
 
-## Why multiplayer works locally but not on Vercel
+Vercel turns **every file inside `api/`** into a serverless function, and the
+Hobby plan allows a maximum of **12**. An earlier layout had 7 endpoints plus 6
+helper modules under `api/lib/` = 13 files, so deployment was rejected with:
 
-Locally, rooms are stored **in memory + a disk file** on one Node process — fine for dev.
+> No more than 12 Serverless Functions can be added to a Deployment on the Hobby plan.
 
-On Vercel, each API request may hit a **different serverless instance** with its own memory. Without shared storage, Player A creates a room on instance 1 and Player B joins on instance 2 → **room not found**.
+All logic now lives in top-level `server/`, and `api/` holds a single dynamic
+route. `/api/rooms/create` resolves to `[endpoint].js` with
+`req.query.endpoint === 'create'`.
 
-### Required: Upstash Redis (free tier)
+## Environment variables
 
-1. Create a database at [console.upstash.com](https://console.upstash.com)
-2. In Vercel → **Project → Settings → Environment Variables**, add:
+Set these on your host (Vercel: Settings → Environment Variables). Locally,
+copy `.env.example` to `.env` — `scripts/dev-server.js` loads it automatically.
 
-| Name | Value |
+| Variable | Required for |
 |---|---|
-| `UPSTASH_REDIS_REST_URL` | From Upstash dashboard → REST URL |
-| `UPSTASH_REDIS_REST_TOKEN` | From Upstash dashboard → REST token |
-| `SUPABASE_URL` | Supabase project URL (enables login, friends, chat, leaderboard) |
-| `SUPABASE_ANON_KEY` | Supabase **anon/public** key (safe for browser — loaded via `/api/rooms/config`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server-only — ranked Elo settlement |
+| `UPSTASH_REDIS_REST_URL` | Online multiplayer |
+| `UPSTASH_REDIS_REST_TOKEN` | Online multiplayer |
+| `SUPABASE_URL` | Login, friends, chat, ranked, leaderboard |
+| `SUPABASE_ANON_KEY` | Same (public key — served to the browser via `/api/rooms/config`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Ranked Elo settlement (server only — never sent to the browser) |
 
-3. **Redeploy** after saving env vars.
+After changing environment variables on Vercel you must **redeploy** for them to
+take effect.
 
-The app auto-detects these and uses Redis instead of in-memory storage (`api/_lib/roomStore.js`).
+### Why multiplayer needs Redis in production
 
-## Deploy steps
+Locally the room store keeps games in memory in a single process. On Vercel each
+request may hit a different serverless instance with its own memory, so a room
+created on one instance is invisible to the next — players get "room not found".
+Upstash Redis gives every instance the same shared store
+(`server/roomStore.js` switches automatically when the two Upstash variables are
+present).
+
+## Deploy
+
+### Vercel
+Push to the connected branch, or click **Redeploy**. No build step runs; the
+static files are served directly and `api/rooms/[endpoint].js` becomes the
+function.
+
+### Railway / Render / Fly.io / Docker / VPS
+Set the same environment variables and run:
 
 ```bash
-git push origin main
+npm install
+node scripts/dev-server.js   # honours PORT, defaults to 3000
 ```
 
-Vercel redeploys automatically if the repo is connected. Or click **Redeploy** in the dashboard.
+This serves the static client and the API from one Node process — no serverless
+function limits apply.
 
-Your URLs (from the Vercel project):
+## Verifying a deployment
 
-- `https://barricade-git-main-lazy-buds1.vercel.app`
-- Production alias shown under **Domains** in the deployment
+```bash
+curl https://YOUR-SITE/api/rooms/list     # → {"rooms":[]}
+curl https://YOUR-SITE/api/rooms/config   # → {"url":"...","anonKey":"..."} when Supabase is set
+```
 
-## Optional env vars (accounts / ranked)
+Run the full suite against any host:
 
-| Name | Purpose |
-|---|---|
-| `SUPABASE_URL` | Server-side auth verify + Elo settlement |
-| `SUPABASE_SERVICE_ROLE_KEY` | Same (never expose to browser) |
-
-Client-side Supabase: edit `src/config/supabaseConfig.js`.
+```bash
+node scratch/test_full_suite.js https://YOUR-SITE
+```

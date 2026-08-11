@@ -1,5 +1,5 @@
 import { getRoom, setRoom } from '../roomStore.js';
-import { generateToken, createInitialGameState, jsonResponse, handleCors } from '../roomUtils.js';
+import { generateToken, createInitialGameState, jsonResponse, handleCors, normalizeRoomCode } from '../roomUtils.js';
 import { verifySupabaseUser, isSupabaseAdminConfigured } from '../supabaseAdmin.js';
 
 const joinLocks = new Set();
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   }
 
   const { code, playerName } = req.body || {};
-  const normalizedCode = (code || '').toUpperCase().trim();
+  const normalizedCode = normalizeRoomCode(code);
 
   if (!normalizedCode || normalizedCode.length !== 6) {
     return jsonResponse(res, 400, { error: 'Invalid room code' });

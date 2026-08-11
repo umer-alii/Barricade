@@ -98,17 +98,21 @@ async function testGameplayAndRules(host, guest) {
   const m1 = await action(host.code, host.playerToken, { type: 'move', col: 4, row: 1 });
   ok(m1.status === 200 && m1.data.gameState.currentPlayer === 1, 'legal move accepted, turn passes');
 
-  // Wall placement by P1
-  const w1 = await action(host.code, guest.playerToken, { type: 'wall', col: 4, row: 4, orientation: 'horizontal' });
+  // Wall placement by P1 ('h'/'v' — see WALL_ORIENTATIONS in src/utils/Constants.js)
+  const w1 = await action(host.code, guest.playerToken, { type: 'wall', col: 4, row: 4, orientation: 'h' });
   ok(w1.status === 200 && w1.data.gameState.players[1].walls === 9, 'wall placed, count decremented');
 
   // Crossing wall rejected
-  const wx = await action(host.code, host.playerToken, { type: 'wall', col: 4, row: 4, orientation: 'vertical' });
+  const wx = await action(host.code, host.playerToken, { type: 'wall', col: 4, row: 4, orientation: 'v' });
   ok(wx.status === 400, 'crossing wall rejected');
 
   // Duplicate wall rejected
-  const wd = await action(host.code, host.playerToken, { type: 'wall', col: 4, row: 4, orientation: 'horizontal' });
+  const wd = await action(host.code, host.playerToken, { type: 'wall', col: 4, row: 4, orientation: 'h' });
   ok(wd.status === 400, 'duplicate wall rejected');
+
+  // Unknown orientation rejected
+  const wo = await action(host.code, host.playerToken, { type: 'wall', col: 2, row: 2, orientation: 'diagonal' });
+  ok(wo.status === 400, 'invalid orientation rejected');
 
   // History notation present
   const p = await poll(host.code, host.playerToken);
@@ -244,8 +248,8 @@ async function testSecurity() {
 async function testRankedSettlementGuards() {
   console.log('\n─── 7. Ranked settlement guards (server-side, in-process) ───');
 
-  const { computeElo, settleRankedRoom, ELO_FLOOR } = await import('../api/_lib/ranking.js');
-  const { verifySupabaseUser, isSupabaseAdminConfigured } = await import('../api/_lib/supabaseAdmin.js');
+  const { computeElo, settleRankedRoom, ELO_FLOOR } = await import('../server/ranking.js');
+  const { verifySupabaseUser, isSupabaseAdminConfigured } = await import('../server/supabaseAdmin.js');
 
   const even = computeElo(1000, 1000, 1);
   ok(even.newA === 1016 && even.newB === 984, 'Elo 1000v1000: winner +16 / loser −16 (K=32)');
@@ -282,8 +286,8 @@ async function testRankedSettlementGuards() {
 async function testTimeoutLogic() {
   console.log('\n─── 8. Timeout detection (in-process, shared logic) ───');
 
-  const { checkTimeout } = await import('../api/_lib/timeControl.js');
-  const { createInitialGameState } = await import('../api/_lib/roomUtils.js');
+  const { checkTimeout } = await import('../server/timeControl.js');
+  const { createInitialGameState } = await import('../server/roomUtils.js');
 
   const state = createInitialGameState('5+3 (Blitz)');
   ok(checkTimeout(state) === null, 'fresh clocks → no timeout');

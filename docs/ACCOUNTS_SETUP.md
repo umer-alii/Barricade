@@ -43,7 +43,7 @@ Set these wherever the `api/` routes run (Vercel dashboard, or your shell for
 | `SUPABASE_URL`              | `https://YOUR-PROJECT-REF.supabase.co`   |
 | `SUPABASE_SERVICE_ROLE_KEY` | service-role secret (**never** shipped to the client) |
 
-Used by `api/lib/supabaseAdmin.js` for two things only:
+Used by `server/supabaseAdmin.js` for two things only:
 
 - verifying client access tokens on room create/join (so a `user_id` cannot be spoofed),
 - calling `settle_ranked_match()` when a ranked game ends.
@@ -86,7 +86,7 @@ object in Redis. Ranked settlement uses those verified IDs.
 ### Ranked settlement flow
 Game end is detected where it always was — `api/rooms/action.js` (goal/resign)
 and `api/rooms/poll.js` (timeout). Both now call
-`settleRankedRoom(room)` (`api/lib/ranking.js`), which invokes the atomic
+`settleRankedRoom(room)` (`server/ranking.js`), which invokes the atomic
 `settle_ranked_match()` Postgres function once per game
 (`room.ratingSettled` flag; reset on rematch). K-factor: 32 (configurable
 via `ELO_K_FACTOR`). Rating math lives in ONE authoritative place (the SQL
@@ -134,8 +134,8 @@ only back the logged-out view.
 ```
 supabase/schema.sql              — full schema + RLS + RPCs
 docs/ACCOUNTS_SETUP.md           — this file
-api/lib/supabaseAdmin.js         — token verify + service-role RPC (fetch-based, no dep)
-api/lib/ranking.js               — settleRankedRoom() + reference Elo
+server/supabaseAdmin.js         — token verify + service-role RPC (fetch-based, no dep)
+server/ranking.js               — settleRankedRoom() + reference Elo
 api/rooms/create.js, join.js     — verified userId on players, ranked gating
 api/rooms/action.js, poll.js     — settlement on game end, reset on rematch
 src/config/supabaseConfig.js     — URL + anon key (fill in)
