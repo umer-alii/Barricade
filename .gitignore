@@ -3,4 +3,6 @@ node_modules/
 *.log
 .dev-room-store.json
 .env
+.env.local
+.vercel
 src/config/supabase.local.js
